@@ -12,14 +12,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-**January 8, 2025 - External Webhook Integration Added**
-- Added external webhook endpoints for document processing integration
-- `/api/v1/webhook/document-process` - Processes documents from URLs with callback support
-- `/api/v1/webhook/document-upload` - Handles file uploads with multipart/form-data
-- Async processing with immediate response and callback notification system
-- Support for PDF, DOCX, DOC, and TXT file formats with 50MB upload limit
-- Removed all demo/fallback content - system now processes real documents exclusively
-- Enhanced error handling with proper status tracking and callback notifications
+**January 8, 2025 - Production Deployment Configuration Complete**
+- Added external webhook endpoints with full deployment support
+- `/api/v1/webhook/document-process` - URL-based document processing
+- `/api/v1/webhook/document-upload` - Direct file upload with multipart/form-data
+- Firebase Firestore integration for production database storage
+- Deployment configurations for Vercel (frontend) and Render (backend)
+- Environment-aware storage: Firebase in production, memory in development
+- CORS configuration for cross-origin deployment scenarios
+- Complete deployment guide with step-by-step instructions
 
 ## System Architecture
 
@@ -59,7 +60,8 @@ Preferred communication style: Simple, everyday language.
 - **Shared Schema**: TypeScript schemas shared between frontend and backend using Zod for validation
 - **Type Safety**: End-to-end type safety from API requests to database operations
 - **Status Tracking**: Real-time processing status updates with progress indicators
-- **Memory Storage**: Temporary in-memory storage for processing states and results
+- **Dual Storage**: Firebase Firestore in production, memory storage in development
+- **Environment-Aware**: Automatic storage selection based on NODE_ENV
 
 ## External Dependencies
 
@@ -84,6 +86,7 @@ Preferred communication style: Simple, everyday language.
 - **ESBuild**: JavaScript bundler for server-side code compilation
 - **TypeScript**: Static type checking across the entire application
 - **PostCSS**: CSS processing with Tailwind integration
+- **Deployment**: Vercel for frontend, Render for backend, Firebase for database
 
 ### Third-party Integrations
 - **Document Download**: HTTP-based document fetching from external URLs

@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: hackrx-backend
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: npm install && npm run build:server
+    startCommand: npm run start:server
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: PORT
+        value: 10000
+      - key: FIREBASE_PROJECT_ID
+        value: hackrx-4d649
+    healthCheckPath: /api/v1/health
+    numInstances: 1
