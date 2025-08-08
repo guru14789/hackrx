@@ -12,12 +12,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-**January 8, 2025 - Project Migration Completed**
-- Successfully migrated from Replit Agent to standard Replit environment
-- Removed all demo/fallback content - system now processes real PDF documents exclusively
-- Added OpenAI API integration for authentic document analysis and question answering
-- Fixed PDF parsing with proper error handling instead of demo content fallbacks
-- Enhanced security with proper client-server separation and error handling
+**January 8, 2025 - External Webhook Integration Added**
+- Added external webhook endpoints for document processing integration
+- `/api/v1/webhook/document-process` - Processes documents from URLs with callback support
+- `/api/v1/webhook/document-upload` - Handles file uploads with multipart/form-data
+- Async processing with immediate response and callback notification system
+- Support for PDF, DOCX, DOC, and TXT file formats with 50MB upload limit
+- Removed all demo/fallback content - system now processes real documents exclusively
+- Enhanced error handling with proper status tracking and callback notifications
 
 ## System Architecture
 
@@ -44,8 +46,12 @@ Preferred communication style: Simple, everyday language.
 - **Clause Matching**: Semantic similarity scoring for relevant content identification
 
 ### API Design
-- **RESTful Endpoints**: Clean API structure with `/api/v1/hackrx/run` for document processing
+- **RESTful Endpoints**: Clean API structure with multiple processing endpoints:
+  - `/api/v1/hackrx/run` - Original document processing endpoint
+  - `/api/v1/webhook/document-process` - External webhook for URL-based document processing
+  - `/api/v1/webhook/document-upload` - File upload webhook with multipart support
 - **Async Processing**: Non-blocking document processing with status tracking and progress updates
+- **Webhook Integration**: Callback notification system for external service integration
 - **Structured Responses**: JSON responses with metadata including confidence scores, token usage, and processing times
 - **Request Validation**: Zod schema validation for type-safe API contracts
 
