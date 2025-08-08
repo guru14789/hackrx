@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM-Powered Query Retrieval System | HackRX</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                fontFamily: {
+                    'inter': ['Inter', 'system-ui', 'sans-serif'],
+                },
+                colors: {
+                    primary: '#2563EB',
+                    secondary: '#64748B',
+                    success: '#059669',
+                    warning: '#D97706',
+                    error: '#DC2626',
+                }
+            }
+        }
+    };
+    </script>
+    <style>
+        .syntax-json {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+        }
+        .json-key { color: #2563EB; }
+        .json-string { color: #059669; }
+        .json-number { color: #D97706; }
+        .json-boolean { color: #DC2626; }
+        .loading-shimmer {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 font-inter text-slate-800">
+    <!-- @COMPONENT: Header -->
+    <header class="bg-white shadow-sm border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-4">
+                    <div class="bg-primary text-white p-2 rounded-lg">
+                        <i class="fas fa-brain text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-900">LLM Query Retrieval System</h1>
+                        <p class="text-sm text-slate-500">HackRX Challenge - Document Intelligence</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-2 h-2 bg-success rounded-full animate-pulse"></div>
+                        <span class="text-sm text-slate-600">API Connected</span>
+                    </div>
+                    <button class="bg-slate-100 hover:bg-slate-200 px-3 py-2 rounded-lg text-sm transition-colors">
+                        <i class="fas fa-cog mr-2"></i>Settings
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- @END_COMPONENT: Header -->
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- @COMPONENT: InputPanel -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200">
+                    <div class="p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <h2 class="text-lg font-semibold text-slate-900">Document Processing</h2>
+                            <div class="flex items-center space-x-2">
+                                <span class="w-2 h-2 bg-warning rounded-full" data-bind="processingStatus"></span>
+                                <span class="text-xs text-slate-500" data-bind="statusText">Ready</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Document URL Input -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-slate-700 mb-2">
+                                <i class="fas fa-file-pdf mr-2 text-error"></i>Document URL
+                            </label>
+                            <input 
+                                type="url" 
+                                placeholder="https://hackrx.blob.core.windows.net/assets/policy.pdf..."
+                                class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+                                data-bind="documentUrl"
+                                data-mock="true"
+                            >
+                            <p class="text-xs text-slate-500 mt-1">Supports PDF, DOCX, and email documents</p>
+                        </div>
+
+                        <!-- Questions Input -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-slate-700 mb-2">
+                                <i class="fas fa-question-circle mr-2 text-primary"></i>Questions
+                            </label>
+                            <div class="space-y-3" data-implementation="Dynamic question list component">
+                                <!-- @MAP: questions.map((question, index) => ( -->
+                                <div class="flex items-center space-x-2">
+                                    <input 
+                                        type="text" 
+                                        placeholder="What is the grace period for premium payment?"
+                                        class="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors text-sm"
+                                        data-mock="true"
+                                    >
+                                    <button class="text-error hover:text-red-700 p-2 transition-colors">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <input 
+                                        type="text" 
+                                        placeholder="What is the waiting period for pre-existing diseases?"
+                                        class="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors text-sm"
+                                        data-mock="true"
+                                    >
+                                    <button class="text-error hover:text-red-700 p-2 transition-colors">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <input 
+                                        type="text" 
+                                        placeholder="Does this policy cover maternity expenses?"
+                                        class="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors text-sm"
+                                        data-mock="true"
+                                    >
+                                    <button class="text-error hover:text-red-700 p-2 transition-colors">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <!-- @END_MAP -->
+                                <button class="w-full py-2 border border-dashed border-slate-300 rounded-lg text-slate-500 hover:border-primary hover:text-primary transition-colors text-sm">
+                                    <i class="fas fa-plus mr-2"></i>Add Question
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Processing Controls -->
+                        <div class="space-y-4">
+                            <button 
+                                class="w-full bg-primary hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                data-event="click:handleSubmit"
+                                data-implementation="Should validate inputs and process document"
+                            >
+                                <i class="fas fa-play mr-2"></i>Process Document
+                            </button>
+                            
+                            <div class="grid grid-cols-2 gap-3">
+                                <button class="bg-slate-100 hover:bg-slate-200 text-slate-700 py-2 px-4 rounded-lg transition-colors text-sm">
+                                    <i class="fas fa-save mr-2"></i>Save Query
+                                </button>
+                                <button class="bg-slate-100 hover:bg-slate-200 text-slate-700 py-2 px-4 rounded-lg transition-colors text-sm">
+                                    <i class="fas fa-history mr-2"></i>Load Previous
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- API Configuration Panel -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 mt-6">
+                    <div class="p-6">
+                        <h3 class="text-sm font-medium text-slate-900 mb-4">
+                            <i class="fas fa-cogs mr-2 text-slate-500"></i>API Configuration
+                        </h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-2">Base URL</label>
+                                <input 
+                                    type="text" 
+                                    value="http://localhost:8000/api/v1"
+                                    class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-slate-50"
+                                    readonly
+                                >
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-2">Authentication</label>
+                                <div class="flex items-center space-x-2">
+                                    <input 
+                                        type="password" 
+                                        placeholder="Bearer token"
+                                        class="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                                        data-mock="true"
+                                    >
+                                    <button class="text-slate-500 hover:text-slate-700 p-2">
+                                        <i class="fas fa-eye text-sm"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- @END_COMPONENT: InputPanel -->
+
+            <!-- @COMPONENT: ResultsPanel -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200">
+                    <div class="p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <h2 class="text-lg font-semibold text-slate-900">Processing Results</h2>
+                            <div class="flex items-center space-x-4">
+                                <div class="flex items-center space-x-2">
+                                    <i class="fas fa-clock text-slate-400 text-sm"></i>
+                                    <span class="text-sm text-slate-600" data-bind="processingTime">2.3s</span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <i class="fas fa-coins text-slate-400 text-sm"></i>
+                                    <span class="text-sm text-slate-600" data-bind="tokenCount">1,247 tokens</span>
+                                </div>
+                                <button class="text-slate-500 hover:text-slate-700 p-2">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Status Tab Navigation -->
+                        <div class="flex space-x-1 mb-6 bg-slate-100 rounded-lg p-1">
+                            <button class="flex-1 py-2 px-4 text-sm font-medium rounded-md bg-white text-primary shadow-sm" data-tab="answers">
+                                <i class="fas fa-list-ul mr-2"></i>Answers
+                            </button>
+                            <button class="flex-1 py-2 px-4 text-sm font-medium rounded-md text-slate-600 hover:text-slate-900 transition-colors" data-tab="json">
+                                <i class="fas fa-code mr-2"></i>JSON Response
+                            </button>
+                            <button class="flex-1 py-2 px-4 text-sm font-medium rounded-md text-slate-600 hover:text-slate-900 transition-colors" data-tab="analytics">
+                                <i class="fas fa-chart-bar mr-2"></i>Analytics
+                            </button>
+                        </div>
+
+                        <!-- @STATE: activeTab:string = 'answers' -->
+                        
+                        <!-- Answers Tab Content -->
+                        <div id="answers-tab" class="space-y-4" data-implementation="Show/hide based on activeTab state">
+                            <!-- @MAP: answers.map((answer, index) => ( -->
+                            <div class="border border-slate-200 rounded-lg p-4 fade-in">
+                                <div class="flex items-start justify-between mb-3">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-xs font-medium">1</div>
+                                        <h4 class="font-medium text-slate-900 text-sm">What is the grace period for premium payment?</h4>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="px-2 py-1 bg-success text-white rounded-full text-xs">Answered</span>
+                                        <span class="text-xs text-slate-500">Confidence: 95%</span>
+                                    </div>
+                                </div>
+                                <div class="bg-slate-50 rounded-lg p-3 mb-3">
+                                    <p class="text-sm text-slate-700" data-mock="true">A grace period of thirty days is provided for premium payment after the due date to renew or continue the policy without losing continuity benefits.</p>
+                                </div>
+                                <div class="flex items-center justify-between text-xs text-slate-500">
+                                    <div class="flex items-center space-x-4">
+                                        <span><i class="fas fa-file-alt mr-1"></i>Source: Section 4.2</span>
+                                        <span><i class="fas fa-search mr-1"></i>Similarity: 0.94</span>
+                                    </div>
+                                    <button class="text-primary hover:text-blue-700">
+                                        <i class="fas fa-external-link-alt mr-1"></i>View Source
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="border border-slate-200 rounded-lg p-4 fade-in">
+                                <div class="flex items-start justify-between mb-3">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-xs font-medium">2</div>
+                                        <h4 class="font-medium text-slate-900 text-sm">What is the waiting period for pre-existing diseases?</h4>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="px-2 py-1 bg-success text-white rounded-full text-xs">Answered</span>
+                                        <span class="text-xs text-slate-500">Confidence: 98%</span>
+                                    </div>
+                                </div>
+                                <div class="bg-slate-50 rounded-lg p-3 mb-3">
+                                    <p class="text-sm text-slate-700" data-mock="true">There is a waiting period of thirty-six (36) months of continuous coverage from the first policy inception for pre-existing diseases and their direct complications to be covered.</p>
+                                </div>
+                                <div class="flex items-center justify-between text-xs text-slate-500">
+                                    <div class="flex items-center space-x-4">
+                                        <span><i class="fas fa-file-alt mr-1"></i>Source: Section 6.1</span>
+                                        <span><i class="fas fa-search mr-1"></i>Similarity: 0.98</span>
+                                    </div>
+                                    <button class="text-primary hover:text-blue-700">
+                                        <i class="fas fa-external-link-alt mr-1"></i>View Source
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="border border-slate-200 rounded-lg p-4 fade-in">
+                                <div class="flex items-start justify-between mb-3">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-xs font-medium">3</div>
+                                        <h4 class="font-medium text-slate-900 text-sm">Does this policy cover maternity expenses?</h4>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="px-2 py-1 bg-success text-white rounded-full text-xs">Answered</span>
+                                        <span class="text-xs text-slate-500">Confidence: 92%</span>
+                                    </div>
+                                </div>
+                                <div class="bg-slate-50 rounded-lg p-3 mb-3">
+                                    <p class="text-sm text-slate-700" data-mock="true">Yes, the policy covers maternity expenses, including childbirth and lawful medical termination of pregnancy. To be eligible, the female insured person must have been continuously covered for at least 24 months. The benefit is limited to two deliveries or terminations during the policy period.</p>
+                                </div>
+                                <div class="flex items-center justify-between text-xs text-slate-500">
+                                    <div class="flex items-center space-x-4">
+                                        <span><i class="fas fa-file-alt mr-1"></i>Source: Section 8.3</span>
+                                        <span><i class="fas fa-search mr-1"></i>Similarity: 0.92</span>
+                                    </div>
+                                    <button class="text-primary hover:text-blue-700">
+                                        <i class="fas fa-external-link-alt mr-1"></i>View Source
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- @END_MAP -->
+                        </div>
+
+                        <!-- JSON Response Tab -->
+                        <div id="json-tab" class="hidden" data-implementation="Show/hide based on activeTab state">
+                            <div class="bg-slate-900 rounded-lg p-4 syntax-json text-sm overflow-x-auto">
+                                <pre class="text-slate-100" data-mock="true"><span class="json-key">{
+  "answers"</span>: <span class="json-key">[</span>
+    <span class="json-string">"A grace period of thirty days is provided for premium payment after the due date to renew or continue the policy without losing continuity benefits."</span>,
+    <span class="json-string">"There is a waiting period of thirty-six (36) months of continuous coverage from the first policy inception for pre-existing diseases and their direct complications to be covered."</span>,
+    <span class="json-string">"Yes, the policy covers maternity expenses, including childbirth and lawful medical termination of pregnancy. To be eligible, the female insured person must have been continuously covered for at least 24 months. The benefit is limited to two deliveries or terminations during the policy period."</span>
+  <span class="json-key">],
+  "metadata"</span>: <span class="json-key">{</span>
+    <span class="json-key">"processing_time"</span>: <span class="json-number">2.34</span>,
+    <span class="json-key">"token_count"</span>: <span class="json-number">1247</span>,
+    <span class="json-key">"confidence_scores"</span>: <span class="json-key">[</span><span class="json-number">0.95</span>, <span class="json-number">0.98</span>, <span class="json-number">0.92</span><span class="json-key">]</span>,
+    <span class="json-key">"document_processed"</span>: <span class="json-boolean">true</span>
+  <span class="json-key">}</span>
+<span class="json-key">}</span></pre>
+                            </div>
+                            <div class="flex items-center justify-between mt-4">
+                                <div class="flex items-center space-x-2">
+                                    <i class="fas fa-check-circle text-success"></i>
+                                    <span class="text-sm text-slate-600">Valid JSON Response</span>
+                                </div>
+                                <button class="bg-slate-100 hover:bg-slate-200 px-3 py-2 rounded-lg text-sm transition-colors">
+                                    <i class="fas fa-copy mr-2"></i>Copy JSON
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Analytics Tab -->
+                        <div id="analytics-tab" class="hidden" data-implementation="Show/hide based on activeTab state">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                                <div class="bg-slate-50 rounded-lg p-4">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <h4 class="text-sm font-medium text-slate-700">Processing Time</h4>
+                                        <i class="fas fa-clock text-slate-400"></i>
+                                    </div>
+                                    <div class="text-2xl font-bold text-slate-900" data-bind="processingTime">2.34s</div>
+                                    <div class="text-xs text-success mt-1">
+                                        <i class="fas fa-arrow-down mr-1"></i>15% faster than average
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-slate-50 rounded-lg p-4">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <h4 class="text-sm font-medium text-slate-700">Token Usage</h4>
+                                        <i class="fas fa-coins text-slate-400"></i>
+                                    </div>
+                                    <div class="text-2xl font-bold text-slate-900" data-bind="tokenCount">1,247</div>
+                                    <div class="text-xs text-warning mt-1">
+                                        <i class="fas fa-arrow-up mr-1"></i>Cost: $0.024
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-slate-50 rounded-lg p-4">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <h4 class="text-sm font-medium text-slate-700">Accuracy Score</h4>
+                                        <i class="fas fa-bullseye text-slate-400"></i>
+                                    </div>
+                                    <div class="text-2xl font-bold text-slate-900" data-bind="accuracyScore">95.2%</div>
+                                    <div class="text-xs text-success mt-1">
+                                        <i class="fas fa-check mr-1"></i>High confidence
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-4">
+                                <h4 class="font-medium text-slate-900">Question Performance Breakdown</h4>
+                                <!-- @MAP: questionAnalytics.map((item, index) => ( -->
+                                <div class="flex items-center justify-between py-3 border-b border-slate-100 last:border-b-0">
+                                    <div class="flex-1">
+                                        <div class="text-sm font-medium text-slate-700">Grace period query</div>
+                                        <div class="flex items-center mt-1">
+                                            <div class="w-32 bg-slate-200 rounded-full h-2">
+                                                <div class="bg-success h-2 rounded-full" style="width: 95%"></div>
+                                            </div>
+                                            <span class="ml-2 text-xs text-slate-500">95%</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-right text-xs text-slate-500">
+                                        <div>156 tokens</div>
+                                        <div>0.8s</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-center justify-between py-3 border-b border-slate-100 last:border-b-0">
+                                    <div class="flex-1">
+                                        <div class="text-sm font-medium text-slate-700">Pre-existing diseases query</div>
+                                        <div class="flex items-center mt-1">
+                                            <div class="w-32 bg-slate-200 rounded-full h-2">
+                                                <div class="bg-success h-2 rounded-full" style="width: 98%"></div>
+                                            </div>
+                                            <span class="ml-2 text-xs text-slate-500">98%</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-right text-xs text-slate-500">
+                                        <div>203 tokens</div>
+                                        <div>1.1s</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-center justify-between py-3 border-b border-slate-100 last:border-b-0">
+                                    <div class="flex-1">
+                                        <div class="text-sm font-medium text-slate-700">Maternity coverage query</div>
+                                        <div class="flex items-center mt-1">
+                                            <div class="w-32 bg-slate-200 rounded-full h-2">
+                                                <div class="bg-success h-2 rounded-full" style="width: 92%"></div>
+                                            </div>
+                                            <span class="ml-2 text-xs text-slate-500">92%</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-right text-xs text-slate-500">
+                                        <div>188 tokens</div>
+                                        <div>0.7s</div>
+                                    </div>
+                                </div>
+                                <!-- @END_MAP -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Status Panel -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 mt-6">
+                    <div class="p-6">
+                        <h3 class="text-sm font-medium text-slate-900 mb-4">
+                            <i class="fas fa-server mr-2 text-slate-500"></i>System Status
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-2 h-2 bg-success rounded-full animate-pulse"></div>
+                                <div>
+                                    <div class="text-sm font-medium text-slate-900">FAISS Vector DB</div>
+                                    <div class="text-xs text-slate-500">Connected</div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center space-x-3">
+                                <div class="w-2 h-2 bg-success rounded-full animate-pulse"></div>
+                                <div>
+                                    <div class="text-sm font-medium text-slate-900">GPT-4 API</div>
+                                    <div class="text-xs text-slate-500">Active</div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center space-x-3">
+                                <div class="w-2 h-2 bg-warning rounded-full animate-pulse"></div>
+                                <div>
+                                    <div class="text-sm font-medium text-slate-900">Document Parser</div>
+                                    <div class="text-xs text-slate-500">Processing</div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center space-x-3">
+                                <div class="w-2 h-2 bg-success rounded-full animate-pulse"></div>
+                                <div>
+                                    <div class="text-sm font-medium text-slate-900">API Gateway</div>
+                                    <div class="text-xs text-slate-500">Healthy</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- @END_COMPONENT: ResultsPanel -->
+        </div>
+    </div>
+
+    <!-- @COMPONENT: NotificationToast -->
+    <div id="toast-container" class="fixed top-4 right-4 space-y-2 z-50" data-implementation="Toast notification system">
+        <!-- Success Toast -->
+        <div class="bg-white border border-slate-200 rounded-lg shadow-lg p-4 flex items-center space-x-3 fade-in max-w-sm">
+            <div class="w-8 h-8 bg-success text-white rounded-full flex items-center justify-center">
+                <i class="fas fa-check text-sm"></i>
+            </div>
+            <div class="flex-1">
+                <div class="text-sm font-medium text-slate-900">Document Processed</div>
+                <div class="text-xs text-slate-500">Successfully analyzed policy document</div>
+            </div>
+            <button class="text-slate-400 hover:text-slate-600">
+                <i class="fas fa-times text-sm"></i>
+            </button>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: NotificationToast -->
+
+    <!-- @FUNCTIONALITY: This application should implement a complete document processing pipeline -->
+    <script>
+    (function() {
+        // TODO: Implement business logic, API calls, or state management
+        
+        // Tab switching functionality
+        const tabs = document.querySelectorAll('[data-tab]');
+        const tabContents = document.querySelectorAll('[id$="-tab"]');
+        
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                const targetTab = this.dataset.tab;
+                
+                // Update active tab styling
+                tabs.forEach(t => {
+                    t.classList.remove('bg-white', 'text-primary', 'shadow-sm');
+                    t.classList.add('text-slate-600', 'hover:text-slate-900');
+                });
+                this.classList.add('bg-white', 'text-primary', 'shadow-sm');
+                this.classList.remove('text-slate-600', 'hover:text-slate-900');
+                
+                // Show/hide tab content
+                tabContents.forEach(content => {
+                    if (content.id === `${targetTab}-tab`) {
+                        content.classList.remove('hidden');
+                    } else {
+                        content.classList.add('hidden');
+                    }
+                });
+            });
+        });
+
+        // Simulated processing states
+        function simulateProcessing() {
+            const statusIndicator = document.querySelector('[data-bind="processingStatus"]');
+            const statusText = document.querySelector('[data-bind="statusText"]');
+            
+            if (statusIndicator && statusText) {
+                statusIndicator.className = 'w-2 h-2 bg-warning rounded-full animate-pulse';
+                statusText.textContent = 'Processing...';
+                
+                setTimeout(() => {
+                    statusIndicator.className = 'w-2 h-2 bg-success rounded-full';
+                    statusText.textContent = 'Complete';
+                }, 3000);
+            }
+        }
+
+        // Add dynamic question functionality
+        const addQuestionBtn = document.querySelector('button:has(.fa-plus)');
+        if (addQuestionBtn) {
+            addQuestionBtn.addEventListener('click', function() {
+                // TODO: Implement dynamic question addition
+                console.log('Add new question input field');
+            });
+        }
+
+        // Toast notification management
+        function showToast(message, type = 'success') {
+            // TODO: Implement toast notification system
+            console.log(`Toast: ${message} (${type})`);
+        }
+
+        // Initialize application
+        console.log('LLM Query Retrieval System initialized');
+        
+        // Simulate initial processing
+        setTimeout(() => {
+            simulateProcessing();
+        }, 1000);
+    })();
+    </script>
+</body>
+</html>
