@@ -2,7 +2,7 @@ import { z } from "zod";
 
 // Document processing request schema
 export const documentProcessingRequestSchema = z.object({
-  documents: z.string().url("Invalid document URL"),
+  documents: z.string().min(1, "Document URL is required"),
   questions: z.array(z.string().min(1, "Question cannot be empty"))
 });
 
