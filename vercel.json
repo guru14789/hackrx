@@ -1,8 +1,8 @@
 {
-  "buildCommand": "npm run build:client",
+  "buildCommand": "npm install && npx vite build --outDir client/dist",
   "outputDirectory": "client/dist",
   "installCommand": "npm install",
-  "framework": "vite",
+  "framework": null,
   "rewrites": [
     { "source": "/api/(.*)", "destination": "https://your-render-backend.onrender.com/api/$1" }
   ],
